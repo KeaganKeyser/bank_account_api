@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
   try {
     const body = await readJson(req);
-    const phone = typeof body.phone === 'string' ? body.phone.trim() : '';
+   let phone = (typeof body.phone === 'string' ? body.phone.trim().replace(/\D+/g, '') : '');
     const bankAccountId = typeof body.bank_account_id === 'string' ? body.bank_account_id.trim() : '';
 
     if (!phone || !bankAccountId) {
@@ -43,4 +43,5 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({ error: 'Internal Server Error', details: err?.message || String(err) }));
   }
+
 }
