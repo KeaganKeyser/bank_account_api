@@ -28,6 +28,7 @@ export default async function handler(req, res) {
     //   // If no markdown block, try to parse the raw body directly as JSON
     //   outputdata = JSON.parse(rawBody || '{}'); // Handle empty body gracefully
     // }
+    return req;
      const data = await req.json();
 
     const match = data.body?.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
