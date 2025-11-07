@@ -17,17 +17,26 @@ export default async function handler(req, res) {
   }
 
   try {
-    const rawBody = await readRawBody(req);
-    let outputdata;
+    // const rawBody = await readRawBody(req);
+    // let outputdata;
 
-    const match = rawBody.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+    // const match = rawBody.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
     
-    if (match && match[1]) {
-      outputdata = JSON.parse(match[1]);
-    } else {
-      // If no markdown block, try to parse the raw body directly as JSON
-      outputdata = JSON.parse(rawBody || '{}'); // Handle empty body gracefully
-    }
+    // if (match && match[1]) {
+    //   outputdata = JSON.parse(match[1]);
+    // } else {
+    //   // If no markdown block, try to parse the raw body directly as JSON
+    //   outputdata = JSON.parse(rawBody || '{}'); // Handle empty body gracefully
+    // }
+     const data = await req.json();
+
+    const match = data.body?.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+const jsonText = match ? match[1] : req;
+const outputdata = JSON.parse(jsonText);
+    
+    
+    // Return the same data as response
+    // return NextResponse.json(outputdata);
 
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
