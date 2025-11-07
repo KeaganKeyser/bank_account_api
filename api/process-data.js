@@ -28,12 +28,12 @@ export default async function handler(req, res) {
     //   // If no markdown block, try to parse the raw body directly as JSON
     //   outputdata = JSON.parse(rawBody || '{}'); // Handle empty body gracefully
     // }
-    return req;
-     const data = await req.json();
+//     return req;
+//      const data = await req.json();
 
-    const match = data.body?.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-const jsonText = match ? match[1] : req;
-const outputdata = JSON.parse(jsonText);
+//     const match = data.body?.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+// const jsonText = match ? match[1] : req;
+// const outputdata = JSON.parse(jsonText);
     
     
     // Return the same data as response
@@ -41,7 +41,7 @@ const outputdata = JSON.parse(jsonText);
 
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(outputdata));
+    res.end(JSON.stringify(req));
   } catch (err) {
     res.statusCode = 400; // Bad Request for parsing errors
     res.setHeader('Content-Type', 'application/json');
