@@ -23,6 +23,7 @@ export default async function handler(req, res) {
     // const match = rawBody.body.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
 
     let object = JSON.parse(rawBody);
+    const match = object.body.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
     
     
     // if (match && match[1]) {
@@ -44,8 +45,8 @@ export default async function handler(req, res) {
 
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
-     res.end(object.body);
-    // res.end(JSON.stringify(rawBody.body));
+     // res.end(object.body);
+    res.end(JSON.stringify(match));
   } catch (err) {
     res.statusCode = 400; // Bad Request for parsing errors
     res.setHeader('Content-Type', 'application/json');
