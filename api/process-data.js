@@ -41,7 +41,7 @@ export default async function handler(req, res) {
 
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
-     res.end(rawBody.body);
+     res.end(rawBody);
     // res.end(JSON.stringify(rawBody.body));
   } catch (err) {
     res.statusCode = 400; // Bad Request for parsing errors
