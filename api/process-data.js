@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     const rawBody = await readRawBody(req);
     // let outputdata;
     // const data = await req.json();
-    // const match = data.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+    const match = rawBody.body.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
     
     // if (match && match[1]) {
     //   outputdata = JSON.parse(match[1]);
@@ -41,8 +41,8 @@ export default async function handler(req, res) {
 
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
-     res.end(rawBody);
-    // res.end(JSON.stringify(rawBody));
+     res.end(match);
+    // res.end(JSON.stringify(match));
   } catch (err) {
     res.statusCode = 400; // Bad Request for parsing errors
     res.setHeader('Content-Type', 'application/json');
