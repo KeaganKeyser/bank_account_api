@@ -33,7 +33,13 @@ export default async function handler(req, res) {
     // const match = rawBody.body.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
 
     // let object = JSON.parse(rawBody);
-    const match = req.body.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+    // const match = req.body.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+     const match = req.body;
+
+      res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+     // res.end(object.body);
+    res.end(match);
     
     
      if (match && match[1]) {
