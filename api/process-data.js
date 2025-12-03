@@ -18,7 +18,7 @@ export default async function handler(req, res) {
 
   try {
     const rawBody = await readRawBody(req);
-    // let outputdata;
+     let outputdata;
     // const data = await req.json();
     // const match = rawBody.body.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
 
@@ -26,12 +26,33 @@ export default async function handler(req, res) {
     const match = object.body.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
     
     
-    // if (match && match[1]) {
-    //   outputdata = JSON.parse(match[1]);
-    // } else {
-    //   // If no markdown block, try to parse the raw body directly as JSON
-    //   outputdata = JSON.parse(rawBody || '{}'); // Handle empty body gracefully
-    // }
+     if (match && match[1]) {
+       outputdata = JSON.parse(match[1]);
+     } else  try {
+        outputdata = JSON.parse(rawBody || '{}');
+      } catch (jsonErr) {
+        // Attempt to parse URL-encoded payloads like: body=%7B...%7D
+        const params = new URLSearchParams(rawBody || '');
+        if (params.has('body')) {
+          const bodyStr = params.get('body') || '{}';
+          outputdata = JSON.parse(bodyStr);
+        } else {
+          // Re-throw original JSON error to be handled by outer catch
+          throw jsonErr;
+        }
+      }
+     if (outputdata && typeof outputdata === 'object' && typeof outputdata.body === 'string') {
+      const inner = outputdata.body.trim();
+      try {
+        // Replace outputdata with the parsed inner object if valid JSON
+        const parsedInner = JSON.parse(inner);
+        outputdata = parsedInner;
+      } catch (innerErr) {
+        // If inner isn't valid JSON, leave outputdata as-is (or optionally keep both)
+        // For visibility keep original object but attach a parsedBody if possible
+        // (Here we choose to leave as-is; you can change to merge if desired)
+      }
+    }
 //     return req;
 //      const data = await req.json();
 
@@ -46,7 +67,7 @@ export default async function handler(req, res) {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
      // res.end(object.body);
-    res.end(match[1]);
+    res.end(outputdata);
   } catch (err) {
     res.statusCode = 400; // Bad Request for parsing errors
     res.setHeader('Content-Type', 'application/json');
