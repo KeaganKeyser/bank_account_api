@@ -92,39 +92,130 @@
 //   }
 // }
 
-export default function handler(req, res) {
-  try {
-    // Step 1: req.body is first-level parsed JSON
-    const first = req.body;
+// export default function handler(req, res) {
+//   try {
+//     // Step 1: req.body is first-level parsed JSON
+//     const first = req.body;
 
-    if (!first || typeof first.body !== "string") {
-      return res.status(400).json({ error: "Invalid structure: missing 'body' string" });
+//     if (!first || typeof first.body !== "string") {
+//       return res.status(400).json({ error: "Invalid structure: missing 'body' string" });
+//     }
+
+//     // Step 2: Parse the inner JSON string
+//     let parsedInner;
+
+//     try {
+//       parsedInner = JSON.parse(first.body);
+//     } catch (err) {
+//       return res.status(400).json({
+//         error: "Inner JSON parsing failed",
+//         details: err.message,
+//         raw_body: first.body
+//       });
+//     }
+
+//     // Success
+//     return res.status(200).json({
+//       success: true,
+//       parsed: parsedInner
+//     });
+
+//   } catch (err) {
+//     return res.status(500).json({
+//       error: "Unexpected server error",
+//       details: err.message
+//     });
+//   }
+// }
+
+// api/parse-inner-json.js
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method Not Allowed' });
+    return;
+  }
+
+  try {
+    // assume top-level parsed or raw body may be present
+    const top = req.body && typeof req.body === 'object' ? req.body : (req.body || { body: '' });
+
+    // Ensure we have a string to parse
+    const innerRaw = typeof top.body === 'string' ? top.body : (top.body ? JSON.stringify(top.body) : '');
+
+    // sanitizer: remove common zero-width / BOM / joiner characters
+    function removeZeroWidth(s) {
+      // U+200B..U+200D ZERO WIDTH (and U+FEFF BOM)
+      return s.replace(/[\u200B-\u200D\uFEFF]/g, '');
     }
 
-    // Step 2: Parse the inner JSON string
-    let parsedInner;
+    function tryParse(jsonStr) {
+      return JSON.parse(jsonStr);
+    }
 
-    try {
-      parsedInner = JSON.parse(first.body);
-    } catch (err) {
+    // 1) Clean invisible characters and trim
+    let cleaned = removeZeroWidth(innerRaw).trim();
+
+    if (!cleaned) {
       return res.status(400).json({
-        error: "Inner JSON parsing failed",
-        details: err.message,
-        raw_body: first.body
+        error: 'Inner JSON parsing failed',
+        details: 'Inner body is empty or only whitespace after cleaning',
+        raw_body: innerRaw,
       });
     }
 
-    // Success
-    return res.status(200).json({
-      success: true,
-      parsed: parsedInner
-    });
+    // 2) Try straightforward parse
+    try {
+      const parsed = tryParse(cleaned);
+      return res.status(200).json({ success: true, parsed });
+    } catch (err) {
+      // If error indicates trailing data after JSON, attempt a safe truncate
+      const msg = String(err.message || err);
+      const trailingError = /Unexpected non-whitespace character after JSON|Unexpected token .* in JSON at position|Unexpected end of JSON input/i;
 
-  } catch (err) {
+      if (trailingError.test(msg)) {
+        // Attempt to truncate after the last '}' — note: this is heuristic.
+        const lastBrace = cleaned.lastIndexOf('}');
+        if (lastBrace !== -1) {
+          const truncated = cleaned.slice(0, lastBrace + 1).trim();
+          // remove zero width again (defensive)
+          const truncatedCleaned = removeZeroWidth(truncated);
+
+          try {
+            const parsed = tryParse(truncatedCleaned);
+            return res.status(200).json({
+              success: true,
+              parsed,
+              note: 'Parsed after truncating trailing garbage after the final }',
+              original_raw_body: innerRaw,
+              cleaned_raw_body: cleaned,
+              truncated_raw_body: truncatedCleaned,
+            });
+          } catch (err2) {
+            // fall through to final error return
+            return res.status(400).json({
+              error: 'Inner JSON parsing failed',
+              details: 'Parsing failed even after truncation: ' + String(err2.message || err2),
+              original_raw_body: innerRaw,
+              cleaned_raw_body: cleaned,
+              truncated_raw_body: truncatedCleaned,
+            });
+          }
+        }
+      }
+
+      // Generic failure
+      return res.status(400).json({
+        error: 'Inner JSON parsing failed',
+        details: msg,
+        raw_body: innerRaw,
+      });
+    }
+  } catch (outerErr) {
     return res.status(500).json({
-      error: "Unexpected server error",
-      details: err.message
+      error: 'Server error',
+      details: String(outerErr.message || outerErr),
     });
   }
 }
+
 
