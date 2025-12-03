@@ -1,14 +1,18 @@
 async function readRawBody(req) {
-  return new Promise((resolve, reject) => {
+   return new Promise((resolve, reject) => {
     let data = '';
-    req.on('data', (chunk) => { data += chunk; });
+    req.on('data', (chunk) => {
+      if (typeof chunk !== 'string' && !(chunk instanceof Buffer) && !(chunk instanceof Uint8Array)) {
+        return reject(new Error('Invalid chunk type received'));
+      }
+      data += chunk;
+    });
     req.on('end', () => {
       resolve(data);
     });
     req.on('error', (err) => reject(err));
   });
 }
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.statusCode = 405;
@@ -17,13 +21,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    const rawBody = await readRawBody(req);
+    let rawBody;
+    if (req.body && typeof req.body === 'object') {
+      rawBody = JSON.stringify(req.body); // Convert the parsed body back to a string
+    } else {
+      rawBody = await readRawBody(req); // Read the raw body
+    }
+    // const rawBody = await readRawBody(req);
      let outputdata;
     // const data = await req.json();
-    // const match = rawBody.body.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+    const match = rawBody.body.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
 
-    let object = JSON.parse(rawBody);
-    const match = object.body.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+    // let object = JSON.parse(rawBody);
+    // const match = object.body.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
     
     
      if (match && match[1]) {
