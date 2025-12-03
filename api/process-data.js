@@ -24,9 +24,10 @@ export default async function handler(req, res) {
     let rawBody;
     if (req.body && typeof req.body === 'object') {
       rawBody = JSON.stringify(req.body); // Convert the parsed body back to a string
-    } else {
-      // rawBody = await readRawBody(req); // Read the raw body
-    }
+    } 
+    // else {
+    //    rawBody = await readRawBody(req); // Read the raw body
+    // }
     // const rawBody = await readRawBody(req);
      let outputdata;
     // const data = await req.json();
