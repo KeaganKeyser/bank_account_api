@@ -92,26 +92,39 @@
 //   }
 // }
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.statusCode = 405;
-    res.setHeader('Content-Type', 'application/json');
-    return res.end(JSON.stringify({ error: 'Method Not Allowed' }));
-  }
-
+export default function handler(req, res) {
   try {
-    const match = req.body; // usually an object
+    // Step 1: req.body is first-level parsed JSON
+    const first = req.body;
 
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    return res.end(JSON.stringify(match)); // 🔥 stringify here
+    if (!first || typeof first.body !== "string") {
+      return res.status(400).json({ error: "Invalid structure: missing 'body' string" });
+    }
+
+    // Step 2: Parse the inner JSON string
+    let parsedInner;
+
+    try {
+      parsedInner = JSON.parse(first.body);
+    } catch (err) {
+      return res.status(400).json({
+        error: "Inner JSON parsing failed",
+        details: err.message,
+        raw_body: first.body
+      });
+    }
+
+    // Success
+    return res.status(200).json({
+      success: true,
+      parsed: parsedInner
+    });
+
   } catch (err) {
-    res.statusCode = 400;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({
-      error: 'Invalid JSON or data format',
-      details: err?.message || String(err),
-    }));
+    return res.status(500).json({
+      error: "Unexpected server error",
+      details: err.message
+    });
   }
 }
 
