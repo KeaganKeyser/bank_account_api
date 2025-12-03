@@ -182,6 +182,7 @@ export default async function handler(req, res) {
 
           try {
             const parsed = tryParse(truncatedCleaned);
+              console.log("Response:", parsed);
             return res.status(200).json({
               success: true,
               parsed,
